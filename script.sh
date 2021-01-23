@@ -103,10 +103,10 @@ si () {
 	if [[ -n $fileName ]] ; then
 		cd bin
 		INFILE="../place-apk-here-for-modding/$fileName-unsigned.apk"
-		projectsFILE="../place-apk-here-for-modding/$fileName-signed.apk"
+		projectsFILE="../place-apk-here-for-signing/$fileName-signed.apk"
 		if [ -e "$INFILE" ] ; then
 			#echo "java -jar signapk.jar -w testkey.x509.pem testkey.pk8 $INFILE $projectsFILE"
-			java -jar signapk.jar -w testkey.x509.pem testkey.pk8 "$INFILE" "$projectsFILE"
+		java -jar apksigner.jar sign --key testkey.pk8 --cert testkey.x509.pem --in "$INFILE" --out "$projectsFILE"
 			if [ "x$?" = "x0" ] ; then
 				rm -f "$INFILE"
 			fi
@@ -701,7 +701,7 @@ fixperm () {
 
 restart () {
 	echo
-	echo "#{red}############################### Apk Multi-Tools ################################"
+	echo "#${red}############################### Apk Multi-Tools ################################"
 	echo
 	echo "- Simple Tasks (Image editing, etc.) ------------------------------------------"
 	echo "  1    Extract APK                       2    Optimize APK Images              "
