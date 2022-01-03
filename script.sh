@@ -147,10 +147,10 @@ ins () {
 	echo
 	if [[ $(adb devices | grep "device" -c) -gt "1" ]] ; then
 		echo "Install APK: $fileName.apk (y/N)?"
-		read INPUT
-		if [ x$INPUT -e "xy" || x$INPUT -e "xY" ] ; then
+		read -p INPUT[yn] answer
+		if [[ $answer = y ]] ; then
 			#echo "adb install -r place-apk-here-for-modding/$fileName-signed.apk"
-			adb install -r "place-apk-here-for-modding/$fileName-signed.apk"
+			adb install -r "place-apk-here-for-signing/$fileName-signed.apk"
 		fi
 	else
 		echo "Error. No device connected."
@@ -200,7 +200,7 @@ de () {
 		rm -f "../place-apk-here-for-modding/$fileName-signed.apk"
 		rm -f "../place-apk-here-for-modding/$fileName-unsigned.apk"
 		rm -rf "../projects/$fileName.apk"
-		java -jar apktool.jar d ../place-apk-here-for-modding/$fileName.apk -o "../projects/$fileName.apk"
+		java -jar apktool.jar --only-main-classes d ../place-apk-here-for-modding/$fileName.apk -o "../projects/$fileName.apk"
 		cd ..
 	else
 		echo
@@ -214,7 +214,7 @@ co () {
 	if [[ -n $fileName ]] ; then
 		cd bin
 		baseAPK=`basename $fileName`
-		java -jar apktool.jar b "../projects/$fileName.apk" -o "../place-apk-here-for-modding/$fileName-unsigned.apk"
+		java -jar apktool.jar --use-aapt2 b "../projects/$fileName.apk" -o "../place-apk-here-for-modding/$fileName-unsigned.apk"
 		cd ..
 	else
 		actvfile ; retval=$? ; if [[ $retval == 0 ]]; then co ; fi
