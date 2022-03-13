@@ -136,10 +136,13 @@ si () {
 			#echo "java -jar signapk.jar -w testkey.x509.pem testkey.pk8 $INFILE $projectsFILE"
 		java -jar apksigner.jar sign --key testkey.pk8 --cert testkey.x509.pem --in "$INFILE" --out "$projectsFILE"
 			if [ "x$?" = "x0" ] ; then
-				rm -f "$INFILE"
+			# // 
+				echo "Not delete."
+				# rm -f "$INFILE"
 			fi
 			echo "Done."
-			md5sum $projectsFILE | cut -c -32 > file1.md5
+			mdq=$(md5sum $projectsFILE | cut -c -32)
+			echo "NAME:$fileName-$dt-signed.apk MD5:$mdq">>"../place-apk-here-for-signing/MD5.ini"
 		else
 			echo -e "${RED}Warning: cannot find file '$INFILE'${NOCOLOR}"
 		fi
@@ -762,8 +765,8 @@ restart () {
 	echo "  7    One-step Zip-Sign-Install"
 	echo
 	echo -e "${YELLOW}- Advanced Tasks (XML, Smali, etc.) -------------------------------------------${LIGHTGRAY}"
-	echo -e "   ${CYAN}9    Decompile APK${NOCOLOR}                     10   Compile APK${NOCOLOR}                      "
-	echo "  11   One-step Compile-Sign-Install"
+	echo -e "   ${CYAN}9    Decompile APK                       10   Compile APK${NOCOLOR} "
+	echo    "  11   One-step Compile-Sign-Install															    "
 	echo
 	echo -e "${YELLOW}- Common Tasks ----------------------------------------------------------------${LIGHTGRAY}"
 	echo "  0    ADB Pull                          8    ADB Push                         "
