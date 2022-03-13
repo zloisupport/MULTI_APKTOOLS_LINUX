@@ -277,6 +277,7 @@ cochk () {
 	done
 }
 
+
 retainorigfiles () {
 	echo
 	clear
@@ -752,6 +753,52 @@ fixperm () {
 	echo "Done. Scroll up to see changes."
 }
 
+# 71) stringsXmlMerger
+stringsxmlmerger(){
+
+	if [[ -n $fileName ]] ; then 
+	clear
+	echo -e "${YELLOW}Enter translated: /home/string.xml${NOCOLOR}"
+	read ANSWER
+	echo -e "${YELLOW}Enter locale prefix : ru,ky${NOCOLOR}"
+	read LOCALE
+		mkdir "./projects/$fileName.apk/res/values-$LOCALE"
+		echo -e "${CYAN}" 
+	
+		java -jar "./bin/StringsXmlMerger.jar" "./projects/$fileName.apk/res/values/strings.xml" "$ANSWER" "./projects/$fileName.apk/res/values-$LOCALE/strings.xml" 
+	 	echo -e " Done! ${NOCOLOR}"
+		 plugins
+	else
+		actvfile ; retval=$? ; if [[ $retval == 0 ]]; then clear ; showpkg ; fi
+	fi
+
+}
+
+# Plugins
+plugins(){
+	echo
+	echo -e "${ORANGE}------------------------------------------------------------------------------ ${LIGHTGRAY}"
+	echo    "  1    StringsXmlMerger.jar                                                                        "
+	echo    "  0  Home                                                                                        "
+	echo -e "${ORANGE}------------------------------------------------------------------------------ ${LIGHTGRAY}"
+	echo
+	printf "%s" "Enter selection: "
+	read ANSWER
+	# restart
+	clear
+	case "$ANSWER" in
+		1)  stringsxmlmerger ;;
+		0) restart;;
+		"00"|"exit")   quit ;;
+		 *)
+		echo "Unknown command: '$ANSWER'"
+		;;
+	esac
+}
+# end Plugins
+
+
+
 restart () {
 	
 	echo
@@ -794,6 +841,7 @@ restart () {
 	echo "  23   Set Compression Level     (Current compression level: $clvl)"
 	echo "  24   Create all missing directories"
 	echo "  25   Show APK package information"
+	echo "  70   Plugins"
 	echo "  99   Fix Tools permissions"
 	echo -e "${RED}  00   Quit${NOCOLOR}"
 	echo "-------------------------------------------------------------------------------"
@@ -840,7 +888,9 @@ restart () {
 		42)  pushzip ;;
 		51)  cls2jar ;;
 		52)  viewjar ;;
+		70)  plugins ;;
 		99)  fixperm ;;
+		000) menu;;
 		"00"|"exit")   quit ;;
 		 *)
 			echo "Unknown command: '$ANSWER'"
@@ -904,4 +954,5 @@ while [ "1" = "1" ] ;
 do
 	restart
 done
+
 exit 0
