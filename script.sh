@@ -3,10 +3,29 @@
 # Ported to Linux by farmatito 2010
 # Changelog for linux version:
 # v 0.1 Initial version
-current=`pwd`
+current="pwd"
+# ========Colors============
+NOCOLOR='\033[0m'
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+ORANGE='\033[0;33m'
+BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+LIGHTGRAY='\033[0;37m'
+DARKGRAY='\033[1;30m'
+LIGHTRED='\033[1;31m'
+LIGHTGREEN='\033[1;32m'
+YELLOW='\033[1;33m'
+LIGHTBLUE='\033[1;34m'
+LIGHTPURPLE='\033[1;35m'
+LIGHTCYAN='\033[1;36m'
+WHITE='\033[1;37m'
+# ===========================
 
 # 0) Pull APK
 ap () {
+	clear
 	if [[ $(adb devices | grep "device" -c) -gt "1" ]] ; then
 		echo "Enter APK remote file location:"
 		echo "i.e. /system/app/launcher.apk"
@@ -23,13 +42,14 @@ ap () {
 			fileName=${APK_FILE%*.apk}
 		fi
 	else
-		echo ; echo "Error. No device connected."
+		echo "Error. No device connected."
 	fi
 }
 
 # 1) Extract APK
 ex () {
 	echo
+	clear
 	if [[ -n $fileName ]] ; then
 		cd bin
 		rm -f "../place-apk-here-for-modding/$fileName-signed.apk"
@@ -49,6 +69,7 @@ ex () {
 
 # 2) Optimize APK PNGs
 opt () {
+	clear
 	echo
 	if [[ -n $fileName || -f ../projects/$fileName.apk/res ]] ; then
 		cd bin
@@ -68,6 +89,7 @@ opt () {
 }
 
 pack () {
+	clear
 	cd bin
 	7za a -tzip "../place-apk-here-for-modding/$fileName-unsigned.apk" ../projects/$fileName.apk/* -mx"$clvl"
 	cd ..
@@ -80,18 +102,19 @@ oa () {
 
 # 3) Zip APK
 zip () {
+	clear
 	if [[ -n $fileName ]] ; then
 		echo "Enter APK type:"
 		echo "---------------"
-		PS3=$(echo ; echo "Enter selection: ")
+		PS3=$(echo "Enter selection: ")
 		select mode in "System APK" "Regular APK" ; do
 			case "$mode" in
 			"System APK"  ) pack ; break ;;
 			"Regular APK" ) oa ; break ;;
-				*) echo ; echo "Invalid input." ;;
+				*) echo "Invalid input." ;;
 			esac
 		done
-		clear ; echo ; echo "File: $fileName.apk zipped."
+		clear ; echo "File: $fileName.apk zipped."
 	else
 		actvfile ; retval=$? ; if [[ $retval == 0 ]]; then zip ; fi
 	fi
@@ -99,11 +122,16 @@ zip () {
 
 # 4) Sign APK
 si () {
+	 clear
 	echo
 	if [[ -n $fileName ]] ; then
+		clear
 		cd bin
+		dt=$(date '+%d-%m-%Y-%H-%M');
 		INFILE="../place-apk-here-for-modding/$fileName-unsigned.apk"
-		projectsFILE="../place-apk-here-for-signing/$fileName-signed.apk"
+		projectsFILE="../place-apk-here-for-signing/$fileName-$dt-signed.apk"
+		# md5=($(md5sum $projectsFILE))
+	    
 		if [ -e "$INFILE" ] ; then
 			#echo "java -jar signapk.jar -w testkey.x509.pem testkey.pk8 $INFILE $projectsFILE"
 		java -jar apksigner.jar sign --key testkey.pk8 --cert testkey.x509.pem --in "$INFILE" --out "$projectsFILE"
@@ -111,13 +139,15 @@ si () {
 				rm -f "$INFILE"
 			fi
 			echo "Done."
+			md5sum $projectsFILE | cut -c -32 > file1.md5
 		else
-			echo "Warning: cannot find file '$INFILE'"
+			echo -e "${RED}Warning: cannot find file '$INFILE'${NOCOLOR}"
 		fi
 		cd ..
 	else
 		actvfile ; retval=$? ; if [[ $retval == 0 ]]; then si ; fi
 	fi
+
 }
 
 # 5) Zipalign
@@ -135,7 +165,7 @@ zipa () {
 				echo "Zipalign: Cannot find file 'place-apk-here-for-modding/$fileName-$STRING.apk'"
 			fi
 		done
-		clear ; echo ; echo "Done."
+		clear ; echo "Done."
 	else
 		actvfile ; retval=$? ; if [[ $retval == 0 ]]; then zipa ; fi
 	fi
@@ -144,16 +174,20 @@ zipa () {
 # 6) Install APK
 ins () {
 	clear
-	echo
-	if [[ $(adb devices | grep "device" -c) -gt "1" ]] ; then
-		echo "Install APK: $fileName.apk (y/N)?"
-		read -p INPUT[yn] answer
-		if [[ $answer = y ]] ; then
-			#echo "adb install -r place-apk-here-for-modding/$fileName-signed.apk"
-			adb install -r "place-apk-here-for-signing/$fileName-signed.apk"
+	if [[ -n $fileName ]] ; then
+		echo
+		if [[ $(adb devices | grep "device" -c) -gt "1" ]] ; then
+			echo "Install APK: $fileName.apk (y/N)?"
+			read -p INPUT[yn] answer
+			if [[ $answer = y ]] ; then
+				#echo "adb install -r place-apk-here-for-modding/$fileName-signed.apk"
+				adb install -r "place-apk-here-for-signing/$fileName-signed.apk"
+			fi
+		else
+			echo "Error. No device connected."
 		fi
 	else
-		echo "Error. No device connected."
+		actvfile ; retval=$? ; if [[ $retval == 0 ]]; then si ; fi
 	fi
 }
 
@@ -162,22 +196,23 @@ alli () {
 	if [[ -n $fileName ]] && [[ $(adb devices | grep "device" -c) -gt "1" ]] ; then
 		echo "Enter APK type:"
 		echo "---------------"
-		PS3=$(echo ; echo "Enter selection: ")
+		PS3=$(echo "Enter selection: ")
 		select mode in "System APK" "Regular APK" ; do
 			case "$mode" in
 				"System APK"  ) pack ; ins ; break ;;
 				"Regular APK" ) oa ; pack ; si ; ins ; break ;;
-					*) echo ; echo "Invalid input." ;;
+					*) echo "Invalid input." ;;
 			esac
 		done
 	else
-		echo ; echo "Error. Check active APK file and make sure device is connected."
+		echo "Error. Check active APK file and make sure device is connected."
 	fi
 }
 
 # 8)
 apu () {
 	if [[ -n $fileName ]] && [[ $(adb devices | grep "device" -c) -gt "1" ]] ; then
+		clear
 		echo "Enter remote APK location."
 		echo "i.e. /system/app/launcher.apk "
 		echo
@@ -195,7 +230,9 @@ apu () {
 
 # 9)
 de () {
+	
 	if [[ -n $fileName ]] ; then
+		clear
 		cd bin
 		rm -f "../place-apk-here-for-modding/$fileName-signed.apk"
 		rm -f "../place-apk-here-for-modding/$fileName-unsigned.apk"
@@ -210,6 +247,7 @@ de () {
 
 # 10)
 co () {
+	clear
 	cochk
 	if [[ -n $fileName ]] ; then
 		cd bin
@@ -223,20 +261,22 @@ co () {
 }
 
 cochk () {
+	clear
 	echo "Enter APK type:"
 	echo "---------------"
-	PS3=$(echo ; echo "Enter selection: ")
+	PS3=$(echo "Enter selection: ")
 
 	select comptype in "System APK" "Regular APK" ; do
 		case "$comptype" in
 			"System APK"|"Regular APK" ) break ;; # valid input.
-			   *) echo ; echo "Invalid input." ;;
+			   *) echo "Invalid input." ;;
 		esac
 	done
 }
 
 retainorigfiles () {
 	echo
+	clear
 	if [[ $comptype == 1 ]]; then
 		echo "Aside from APK signatures, copy unmodified files "
 	else
@@ -274,6 +314,7 @@ all () {
 
 # 12)
 bopt () {
+	clear
 	cd bin
 	mkdir -p "../place-apk-here-to-batch-optimize/original"
 	find "../place-apk-here-to-batch-optimize" -name *.apk | while read APK_FILE ;
@@ -302,6 +343,7 @@ bopt () {
 
 # 13)
 asi () {
+	clear
 	echo
 	cd bin
 	find "../place-apk-here-for-signing" -name *.apk | while read PLACE-APK-HERE-FOR-SIGNING ;
@@ -314,6 +356,7 @@ asi () {
 
 # 14)
 ogg () {
+	clear
 	cd bin
 	mkdir -p "../place-ogg-here"
 	find "../place-ogg-here/" -name *.ogg | while read OGG_FILE ;
@@ -332,28 +375,30 @@ ogg () {
 
 # 15)
 selt () {
+	clear
 	cd place-apk-here-for-modding
 	echo
-	echo "Listing APK files:"
+	echo -e "${YELLOW}Listing APK files:${NOCOLOR}"
 	echo "------------------"
-	PS3=$(echo ""; echo "Choose APK: ")
+	PS3=$(echo ""; echo -e "${YELLOW}Choose APK: ${NOCOLOR}")
 	fileList=$(find . -type f -name "*.apk")
 	# Clean up list.
 	fileList=${fileList/\.\//}
 
 	if [[ -z $fileList ]] ; then
 		clear
-		echo ; echo "No APK files found. Please check the place-apk-here-for-modding directory."
+		echo -e "${RED}No APK files found. Please check the place-apk-here-for-modding directory.${NOCOLOR}"
 		return 1
 	else
 		select fileName in $fileList; do
 			if [[ -n "$fileName" ]] ; then
 				fileName=${fileName%.*}
 				if [[ $1 == "s1" ]]; then clear ; fi
-					echo ; echo "Selected: $fileName.apk" ; break
+					echo "Selected: $fileName.apk" ; break
 					return 0
 			else
-		    	echo ; echo "Error. Wrong input."
+		    	echo -e "${RED}Error. Wrong input."
+				
 		    	return 1
 		    fi
 		done
@@ -364,7 +409,8 @@ selt () {
 }
 
 actvfile () {
-	echo "No active APK file set."
+	clear
+	echo -e "${YELLOW}No active APK file set.${NOCOLOR}"
 	printf "Set active APK file? (Y/n): "
 	read INPUT
 	if [[ x$INPUT == "xy" || x$INPUT == "xY" || x$INPUT == "x" ]]; then
@@ -375,13 +421,14 @@ actvfile () {
 			return 0
 		fi
 	else
-		clear ; echo ; echo "Operation aborted."
+		clear ; echo "Operation aborted."
 		return 1
 	fi
 }
 
 # 16)
 frm () {
+	clear
 	echo
 	rm -rf $HOME/apktool
 	cd bin
@@ -418,7 +465,8 @@ frm () {
 
 # 17)
 clr () {
-	printf "Do you want to clean your current projects (y/N)? "
+	clear
+	printf "${YELLOW}Do you want to clean your current projects (y/N)? ${NOCOLOR}"
 	read INPUT
 	if [[ "x$INPUT" = "xy" || "x$INPUT" = "xY" ]] ; then
 		rm -rf place-apk-here-for-signing
@@ -477,7 +525,7 @@ apren () {
 	if [[ ! -z $1 ]]; then
 		apkclean $1
 	fi
-	clear ; echo ; echo "Done."
+	clear ; echo "Done."
 }
 
 apkclean () {
@@ -515,10 +563,10 @@ devback () {
 		echo
 		apkclean "../apk-backup/"
 	else
-		echo ; echo "Error. No device connected."
+		echo "Error. No device connected."
 	fi
 
-	clear ; echo ; echo "Done."
+	clear ; echo "Done."
 }
 
 devres () {
@@ -554,10 +602,10 @@ devres () {
 			echo
 		done
 	else
-		echo ; echo "Error. No device connected."
+		echo "Error. No device connected."
 	fi
 
-	clear ; echo ; echo "Done."
+	clear ; echo "Done."
 }
 
 mkzip () {
@@ -590,9 +638,9 @@ mkzip () {
 			"n" | "N" ) zipName="$zipName" ;;
 			* ) zipName="${zipName}-$(date +%Y%m%d-%H%M)" ;;
 		esac
-		echo ; echo "Compressing update.zip..."
+		echo "Compressing update.zip..."
 		7za a -tzip "./projects/$zipName.zip" ./zip-temp/* -mx"$clvl" -r-
-		echo ; echo "Signing $zipName.zip..."
+		echo "Signing $zipName.zip..."
 		java -jar "./bin/signapk.jar" -w "./bin/testkey.x509.pem" "./bin/testkey.pk8" "./projects/$zipName.zip" "./projects/$zipName-signed.zip"
 		rm -f "./projects/$zipName.zip"
 		clear ; echo ; printf "Done."
@@ -615,22 +663,22 @@ pushzip () {
 
 		if [[ -z $fileList ]] ; then
 			clear
-			echo ; echo "No ZIP files found. Please check the projects directory."
+			echo "No ZIP files found. Please check the projects directory."
 		else
 			select zipName in $fileList; do
 				if [[ -n "$zipName" ]] ; then
 					zipName=${zipName%.*}
-					echo ; echo "Pushing $zipName.zip to device /sdcard/"
+					echo "Pushing $zipName.zip to device /sdcard/"
 					adb push "./$zipName.zip" "/sdcard/"
-					clear ; echo ; echo "Done." ; break
+					clear ; echo "Done." ; break
 				else
-			    	echo ; echo "Error. Wrong input."
+			    	echo "Error. Wrong input."
 			    fi
 			done
 		fi
 		cd ..
 	else
-		echo ; echo "Error. No device connected."
+		echo "Error. No device connected."
 	fi
 }
 
@@ -652,7 +700,7 @@ cls2jar () {
 		mv -uf "$safeName-dex2jar.jar" "$fileName.jar"
 		cd ..
 
-		clear ; echo ; echo "Created /projects/$fileName.jar"
+		clear ; echo "Created /projects/$fileName.jar"
 	else
 		actvfile ; retval=$? ; if [[ $retval == 0 ]]; then cls2jar ; fi
 	fi
@@ -666,7 +714,7 @@ viewjar () {
 			# Execute jd-gui as a parallel process
 			gnome-terminal -x ./bin/jd-view $fileName
 
-			clear ; echo ; echo "Viewing file: $fileName.jar"
+			clear ; echo "Viewing file: $fileName.jar"
 		else
 			echo "File: /projects/$fileName.jar does not exist. Please extract from APK."
 		fi
@@ -686,8 +734,10 @@ crtdirs () {
 }
 
 showpkg () {
-	if [[ -n $fileName ]] ; then
-		./bin/aaparser -i "./place-apk-here-for-modding/$fileName.apk"
+	if [[ -n $fileName ]] ; then 
+		echo -e "${CYAN}"
+		./bin/aapt dump badging "./place-apk-here-for-modding/$fileName.apk"
+		echo -e "${NOCOLOR}"
 	else
 		actvfile ; retval=$? ; if [[ $retval == 0 ]]; then clear ; showpkg ; fi
 	fi
@@ -696,58 +746,63 @@ showpkg () {
 fixperm () {
 	./bin/perm
 	clear
-	echo ; echo "Done. Scroll up to see changes."
+	echo "Done. Scroll up to see changes."
 }
 
 restart () {
+	
 	echo
-	echo "#${red}############################### Apk Multi-Tools ################################"
-	echo
-	echo "- Simple Tasks (Image editing, etc.) ------------------------------------------"
+	echo -e "${ORANGE}------------------------------------------------------------------------------ ${LIGHTGRAY}"
+	echo -e "${ORANGE}|                              Apk Multi-Tools                               |${LIGHTGRAY}"
+	echo -e "${ORANGE}------------------------------------------------------------------------------ ${LIGHTGRAY}"
+	echo 
+	echo -e "${YELLOW}- Simple Tasks (Image editing, etc.)  -----------------------------------------${LIGHTGRAY}"
 	echo "  1    Extract APK                       2    Optimize APK Images              "
 	echo "  3    Zip APK                                                                 "
 	echo "  7    One-step Zip-Sign-Install"
 	echo
-	echo "- Advanced Tasks (XML, Smali, etc.) -------------------------------------------"
-	echo "  9    Decompile APK                     10   Compile APK                      "
+	echo -e "${YELLOW}- Advanced Tasks (XML, Smali, etc.) -------------------------------------------${LIGHTGRAY}"
+	echo -e "   ${CYAN}9    Decompile APK${NOCOLOR}                     10   Compile APK${NOCOLOR}                      "
 	echo "  11   One-step Compile-Sign-Install"
 	echo
-	echo "- Common Tasks ----------------------------------------------------------------"
+	echo -e "${YELLOW}- Common Tasks ----------------------------------------------------------------${LIGHTGRAY}"
 	echo "  0    ADB Pull                          8    ADB Push                         "
-	echo "  4    Sign APK                          6    Install APK                      "
+	echo -e "${CYAN}  4    Sign APK${NOCOLOR}                          6    Install APK                      "
 	echo "  5    Zipalign APK                                                            "
 	echo
-	echo "- Batch Operations ------------------------------------------------------------"
+	echo -e "${YELLOW}- Batch Operations ------------------------------------------------------------${LIGHTGRAY}"
 	echo "  12   Batch Optimize APK                13   Batch Sign APK                   "
 	echo "  14   Batch Optimize OGG files"
 	echo
-	echo "- Distribution & Update.zip Creation ------------------------------------------"
+	echo -e "${YELLOW}- Distribution & Update.zip Creation ------------------------------------------${LIGHTGRAY}"
 	echo "  41   Create Update.zip                 42   Push Update.zip to device        "
 	echo
-	echo "- Decompile Classes.dex & View Decompiled Code --------------------------------"
+	echo -e "${YELLOW}- Decompile Classes.dex & View Decompiled Code --------------------------------${LIGHTGRAY}"
 	echo "  51   Decompile Classes.dex             52   View Decompiled Code             "
 	echo
-	echo "- ADB Device & APK Management -------------------------------------------------"
+	echo -e "${YELLOW}- ADB Device & APK Management -------------------------------------------------${LIGHTGRAY}"
 	echo "  30   Backup Device Installed APKs      31   Batch Rename APK                 "
 	echo "  32   Batch Install APK (apk-backup)"
 	echo
-	echo "-------------------------------------------------------------------------------"
-	echo "  20   Set Active APK"
+	echo -e "${YELLOW}-------------------------------------------------------------------------------${NOCOLOR}"
+	echo -e "${CYAN}  20   Set Active APK${NOCOLOR}"
 	echo "  21   Import framework-res.apk  (Perform apktool.jar if framework-res.apk)"
 	echo "  22   Clear Project Files"
 	echo "  23   Set Compression Level     (Current compression level: $clvl)"
 	echo "  24   Create all missing directories"
 	echo "  25   Show APK package information"
 	echo "  99   Fix Tools permissions"
-	echo "  00   Quit"
+	echo -e "${RED}  00   Quit${NOCOLOR}"
 	echo "-------------------------------------------------------------------------------"
-	printf "  Active APK File: "
+	printf " ${CYAN} Active APK File: ${NOCOLOR}"
 	if [[ -n $fileName ]] ; then
-		printf "$fileName.apk"
+		printf "${GREEN}$fileName.apk ${NOCOLOR}"
 	else
-		printf "NONE"
-	fi
+		printf "${RED}NONE${NOCOLOR}"
+	fi 
+	
 	printf "\n"
+	
 	echo "-------------------------------------------------------------------------------"
 	echo
 	printf "%s" "Enter selection: "
@@ -791,7 +846,7 @@ restart () {
 }
 
 # Start ----------------------------------------
-echo "Starting APK Multi-Tools..."
+echo -e "${CYAN}Starting APK Multi-Tools...${NOCOLOR}"
 # Terminal Dimensions
 printf '\033[8;48;80t'
 PATH="$PATH:$PWD/bin"
@@ -823,8 +878,8 @@ do
 	which "$PROGRAM" > /dev/null
 	if [ "x$?" = "x1" ] ; then
 		ERROR="1"
-		echo ; echo ; echo "The program $PROGRAM is missing or is not in your PATH."
-		echo ; echo "Please install it or fix your PATH variable"
+		echo ; echo "The program $PROGRAM is missing or is not in your PATH."
+		echo "Please install it or fix your PATH variable"
 	fi
 done
 if [ "x$ERROR" = "x1" ] ; then
@@ -840,7 +895,7 @@ echo -n "Initializing ADBD... "
 # adbd=$(adb start-server)	# Start ADB Daemon
 echo "Done."
 
-# clear
+clear
 reset
 while [ "1" = "1" ] ;
 do
