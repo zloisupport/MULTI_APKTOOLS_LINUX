@@ -250,7 +250,7 @@ de () {
 
 # 10)
 co () {
-	clear
+	# clear
 	cochk
 	if [[ -n $fileName ]] ; then
 		cd bin
@@ -280,7 +280,7 @@ cochk () {
 
 retainorigfiles () {
 	echo
-	clear
+	# clear
 	if [[ $comptype == 1 ]]; then
 		echo "Aside from APK signatures, copy unmodified files "
 	else

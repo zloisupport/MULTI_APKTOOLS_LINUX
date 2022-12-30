@@ -42,7 +42,7 @@ cd $current
 echo "Please make sure to install SOX, if you are on debian/ubuntu open terminal"
 echo " and type in"
 echo " sudo su"
-echo "apt-get install sox"
+echo "apt-get install sox "
 echo " this will install sox other wise use your software install program to install sox"
 echo "once sox is installed you need to add script to your path"
 echo " you can do this by opening a new terminal window and type"
@@ -61,6 +61,13 @@ folder(){
 	mkdir "place-jar-here-for-modding"
 	mkdir "place-ogg-here"
 	mkdir "projects"
+
+	chmod 777 "place-apk-here-for-modding" 
+	chmod 777 "place-apk-here-for-signing" 
+	chmod 777 "place-apk-here-to-batch-optimize"
+	chmod 777 "place-jar-here-for-modding"
+	chmod 777 "place-ogg-here"
+	chmod 777 "projects"
 echo "Done Creating Folders"
 menu
 }
